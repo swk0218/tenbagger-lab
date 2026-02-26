@@ -133,19 +133,36 @@ class PM:
         return pass_rows, failed_examples, quick_passed, rejected_notes
 
     def run_full(self) -> Path:
-        ticker_map = get_sec_ticker_map()
         pool_size = self.config.quick_candidate_pool_size
-        macro_rows = macro_snapshot()
-
         evidence_rows: list[dict] = []
         provenance: list[dict] = []
         quick_notes: list[str] = []
 
-        universe = self._resolve_universe(ticker_map, pool_size)
-        market, calc_errors = self._compute_market_metrics(universe, ticker_map)
-        pass_rows, _, quick_passed, rejected_notes = self._run_quick_stage(universe, ticker_map, market, evidence_rows, provenance)
+        try:
+            ticker_map = get_sec_ticker_map()
+        except Exception as exc:
+            ticker_map = {}
+            quick_notes.append(f"Universe load failed: {type(exc).__name__}")
 
-        if not self.config.tickers and len(pass_rows) < 6:
+        try:
+            macro_rows = macro_snapshot()
+        except Exception as exc:
+            macro_rows = []
+            quick_notes.append(f"Macro snapshot failed: {type(exc).__name__}")
+
+
+        universe = self._resolve_universe(ticker_map, pool_size) if ticker_map else []
+        calc_errors: list[str] = []
+        market: dict[str, dict] = {}
+        pass_rows: list[dict] = []
+        quick_passed: list[tuple[str, int, float, float]] = []
+        rejected_notes: list[str] = []
+
+        if universe:
+            market, calc_errors = self._compute_market_metrics(universe, ticker_map)
+            pass_rows, _, quick_passed, rejected_notes = self._run_quick_stage(universe, ticker_map, market, evidence_rows, provenance)
+
+        if universe and (not self.config.tickers) and len(pass_rows) < 6:
             expanded_universe = self._resolve_universe(ticker_map, 2000)
             market, calc_errors = self._compute_market_metrics(expanded_universe, ticker_map)
             evidence_rows = []
