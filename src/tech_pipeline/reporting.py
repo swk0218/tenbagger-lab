@@ -14,12 +14,15 @@ def write_reports(
     quick_rows: list[dict],
     deep_rows: list[dict],
     verifier_issues: list[dict],
+    notes: list[str] | None = None,
 ) -> None:
     qdf = pd.DataFrame(quick_rows)
     ddf = pd.DataFrame(deep_rows)
 
     qdf.to_parquet(run_dir / "metrics_quick.parquet", index=False)
     ddf.to_parquet(run_dir / "metrics_deep.parquet", index=False)
+
+    notes = notes or []
 
     (run_dir / "report_quick.md").write_text(
         "# PM + AnalystA Quick Report\n\n"
@@ -28,6 +31,8 @@ def write_reports(
         + "\n".join(f"- {m['series']}: {m['value']} ({m['date']})" for m in macro_rows)
         + "\n\n## Quick Ranking (0-100)\n"
         + (qdf[["ticker", "score", "passed_step_a", "failures"]].sort_values("score", ascending=False).to_markdown(index=False) if not qdf.empty else "No rows")
+        + "\n\n## Notes\n"
+        + ("\n".join(f"- {n}" for n in notes) if notes else "- None")
         + f"\n\n## Verifier Issues\n- {len(verifier_issues)} issues",
         encoding="utf-8",
     )
@@ -40,6 +45,8 @@ def write_reports(
         "- PM retries when verifier flags critical missing fields (max 2 retries).\n\n"
         "## Deep Ranking (0-100)\n"
         + (ddf[["ticker", "score", "attempt", "passed_step_a", "failures"]].sort_values("score", ascending=False).to_markdown(index=False) if not ddf.empty else "No rows")
+        + "\n\n## Notes\n"
+        + ("\n".join(f"- {n}" for n in notes) if notes else "- None")
         + f"\n\n## Verifier Issues\n- {len(verifier_issues)} issues",
         encoding="utf-8",
     )

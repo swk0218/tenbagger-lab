@@ -33,6 +33,8 @@ def run_quick_for_ticker(ticker: str, cik: int, market_metrics: dict, filing_rec
         "adtv_3m_usd": float(market_metrics.get("adtv_3m_usd", 0.0) or 0.0),
         "rs126": float(market_metrics.get("rs126", 0.0) or 0.0),
         "market_cap_usd": float(market_metrics.get("market_cap_usd", 0.0) or 0.0),
+        "price": float(market_metrics.get("price", 0.0) or 0.0),
+        "shares_outstanding": float(market_metrics.get("shares_outstanding", 0.0) or 0.0),
         "sec_filing_recency_days": filing_recency_days,
         "revenue_growth_yoy": 0.0,
         "gross_margin": (gm / rev) if (gm and rev) else 0.0,
