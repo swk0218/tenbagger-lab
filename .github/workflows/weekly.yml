@@ -1,18 +1,72 @@
-name: Weekly Run (Mon 09:00 KST)
+name: Weekly Tenbagger Run
 
 on:
+  workflow_dispatch: {}
   schedule:
-    - cron: "0 0 * * 1"   # Mon 00:00 UTC = Mon 09:00 KST
-  workflow_dispatch:       # 필요하면 수동 실행 버튼도 생김
+    # 매주 월요일 09:00 KST = 월요일 00:00 UTC
+    - cron: "0 0 * * 1"
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run something
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies (auto-detect)
+        shell: bash
         run: |
-          echo "Hello from weekly run"
-          date -u
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+
+          # 1) uv
+          if [ -f "uv.lock" ]; then
+            python -m pip install uv
+            uv sync
+            exit 0
+          fi
+
+          # 2) poetry
+          if [ -f "poetry.lock" ] || grep -q "\[tool.poetry\]" pyproject.toml 2>/dev/null; then
+            python -m pip install poetry
+            poetry config virtualenvs.create false
+            poetry install --no-interaction --no-ansi
+            exit 0
+          fi
+
+          # 3) requirements.txt
+          if [ -f "requirements.txt" ]; then
+            python -m pip install -r requirements.txt
+            exit 0
+          fi
+
+          # 4) fallback: pyproject 기반(있으면 editable 설치)
+          if [ -f "pyproject.toml" ]; then
+            python -m pip install -e .
+            exit 0
+          fi
+
+          echo "No dependency file found (uv.lock / poetry.lock / requirements.txt / pyproject.toml)."
+          exit 1
+
+      - name: Run full pipeline
+        shell: bash
+        run: |
+          set -euxo pipefail
+          make run
+
+      - name: Upload run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: runs
+          path: runs/
+          if-no-files-found: error
