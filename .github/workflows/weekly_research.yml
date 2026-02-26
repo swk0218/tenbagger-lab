@@ -2,14 +2,12 @@ name: Weekly Research Pipeline
 
 on:
   schedule:
-    # 월요일 13:00 UTC (KST 22:00)
     - cron: "0 13 * * 1"
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-
     env:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
@@ -30,6 +28,24 @@ jobs:
 
       - name: Run pipeline
         run: make run
+
+      - name: Add summary to Actions
+        if: always()
+        run: |
+          echo "## 📊 Weekly Top Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if ls runs/*/report_deep.md 1> /dev/null 2>&1; then
+            echo "### Deep Report (Top Candidates)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -n 80 runs/*/report_deep.md >> $GITHUB_STEP_SUMMARY
+          elif ls runs/*/report_quick.md 1> /dev/null 2>&1; then
+            echo "### Quick Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -n 80 runs/*/report_quick.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No report found under runs/." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
