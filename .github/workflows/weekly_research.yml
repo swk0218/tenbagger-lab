@@ -1,0 +1,30 @@
+name: Weekly Research Pipeline
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Run pipeline
+        run: make run
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-research-${{ github.run_id }}
+          path: runs/
