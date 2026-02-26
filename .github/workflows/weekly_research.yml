@@ -2,16 +2,24 @@ name: Weekly Research Pipeline
 
 on:
   schedule:
+    # 월요일 13:00 UTC (KST 22:00)
     - cron: "0 13 * * 1"
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
