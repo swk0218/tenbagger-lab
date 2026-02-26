@@ -26,8 +26,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
 
-      - name: Run pipeline
-        run: make run
+      - name: Run pipeline (quick mode for CI stability)
+        run: make run_quick
 
       - name: Add summary to Actions
         if: always()
