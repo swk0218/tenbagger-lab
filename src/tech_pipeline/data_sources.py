@@ -58,6 +58,11 @@ def _sleep_backoff(attempt: int) -> None:
     time.sleep(wait)
 
 
+def _extract_text_from_filing(content: str) -> str:
+    parser = "xml" if content.lstrip().startswith("<?xml") else "lxml"
+    return BeautifulSoup(content, parser).get_text(" ", strip=True)
+
+
 def _get_text_with_retries(url: str, headers: dict[str, str], timeout: int = 30, retries: int = 5, polite_sleep: float = 0.0) -> str:
     last_err: Exception | None = None
     for i in range(retries):
@@ -263,7 +268,7 @@ def latest_filings_docs(
         text = ""
         try:
             html = _get_text_with_retries(filing_url, headers=SEC_HEADERS, timeout=30, retries=4, polite_sleep=SEC_POLITE_SLEEP_SEC)
-            text = BeautifulSoup(html, "lxml").get_text(" ", strip=True)
+            text = _extract_text_from_filing(html)
         except Exception:
             text = ""
 
