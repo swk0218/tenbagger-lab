@@ -23,11 +23,12 @@ REQUIRED_OUTPUTS = [
 
 @dataclass(slots=True)
 class PipelineConfig:
-    tickers: list[str] = field(default_factory=lambda: list(DEFAULT_TICKERS))
+    tickers: list[str] | None = None
     quick_rules_path: str = "spec/quick_rules.md"
     deep_rules_path: str = "spec/deep_rules.md"
     hard_max_market_cap_usd: float = MAX_MARKET_CAP_USD
     max_verifier_retries: int = 2
+    quick_candidate_pool_size: int = 800
 
     def load_specs(self) -> tuple[RuleSpec, RuleSpec]:
         quick = load_rules(self.quick_rules_path)
